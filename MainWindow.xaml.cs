@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -22,7 +23,7 @@ namespace VisualADB
     public partial class MainWindow : Window
     {
 
-        String output = "";
+        private String output = "", kernelPath = "";
 
         public MainWindow()
         {
@@ -112,6 +113,44 @@ namespace VisualADB
             else
             {
                 output = "Rebooting...";
+            }
+            System.Diagnostics.Debug.WriteLine(output);
+            outputADB.Text = outputADB.Text + "FB>" + output + "\n";
+        }
+
+        private void chooseKernelFile(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = ".img Files | *.img";
+            ofd.ShowDialog();
+            String path = ofd.FileName;
+            if (path != null && path.Length>0)
+            {
+                kernelPathText.Text = path;
+                kernelPath = path;
+            }
+        }
+
+        private void flashKernel(object sender, RoutedEventArgs e)
+        {
+            Process proc = new Process();
+            proc.StartInfo.FileName = "fastboot.exe";
+            proc.StartInfo.Arguments = "flash boot" + kernelPath;
+            proc.StartInfo.UseShellExecute = false;
+            proc.StartInfo.RedirectStandardOutput = true;
+            proc.StartInfo.RedirectStandardError = true;
+            proc.Start();
+            if (!proc.WaitForExit(5000))
+            {
+                output = "No device attached!";
+                proc.Kill();
+            }
+            else if (kernelPath=="") {
+                output = "Please enter a correct path!";
+            }
+            else
+            {
+                output = "Flashing kernel...\nRebooting...";
             }
             System.Diagnostics.Debug.WriteLine(output);
             outputADB.Text = outputADB.Text + "FB>" + output + "\n";
